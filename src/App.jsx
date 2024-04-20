@@ -15,14 +15,14 @@ function TodoList() {
       const db = await indexedDB.createDatabase("TodoDB");
       setDb(db);
       const conn = await db.open();
-      const store = conn.createObjectsStore("Todo", {
+      const store = conn.createObjectStore("Todo", {
         keyPath: "id",
         autoIncrement: true,
       });
       setStore(store);
       store.createIndex("title", "title", { unique: false });
       const todos = await store.getAll();
-      setTodos(todos);
+      setTodos(await todos.json());
     };
     initDB;
   }, []);
@@ -30,20 +30,24 @@ function TodoList() {
   const handleSubmit = (event) => {
     const submitHandler = async () => {
       event.preventDefault();
-      const newTodoObj = { title: newTodo, completed: false };
-      store.put(newTodoObj);
-      setTodos([...todos, newTodoObj]);
-      setNewTodo("");
+      if (store && db) {
+        const newTodoObj = { id: Date.now(), title: newTodo, completed: false };
+        store.put(newTodoObj);
+        setTodos([...todos, newTodoObj]);
+        setNewTodo("");
+      }
     };
     submitHandler;
   };
 
   const handleToggelCompleted = (id) => {
     const completedTaskHandler = async () => {
-      const todo = await store.get(id);
-      todo.completed = !todo.completed;
-      store.put(todo);
-      setTodos(todos.map((todo) => (todo.id === id ? todo : todo)));
+      if (store && db) {
+        const todo = await store.get(id);
+        todo.completed = !todo.completed;
+        store.put(todo);
+        setTodos(todos.map((todo) => (todo.id === id ? todo : todo)));
+      }
     };
     completedTaskHandler;
   };
@@ -69,7 +73,6 @@ function TodoList() {
               }}
             >
               {todo.title}
-              {console.log(todo.title)}
             </span>
             <button onClick={() => handleToggelCompleted(todo.id)}>
               {todo.completed ? "Undo" : "Done"}
